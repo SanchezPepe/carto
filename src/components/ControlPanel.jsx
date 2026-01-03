@@ -15,7 +15,8 @@ import {
   HiCube,
   HiArrowsPointingOut,
   HiMapPin,
-  HiPaperAirplane
+  HiPaperAirplane,
+  HiGlobeAmericas
 } from 'react-icons/hi2';
 import { MAP_TYPES } from './maps';
 import { useIsMobile } from '../utils/useMediaQuery';
