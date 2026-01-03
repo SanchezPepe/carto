@@ -23,6 +23,8 @@ function App() {
   const [datasets, setDatasets] = useState([]);
   const [cities, setCities] = useState([]);
   const [geojson, setGeojson] = useState(null);
+  const [airports, setAirports] = useState([]);
+  const [flights, setFlights] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -42,6 +44,8 @@ function App() {
         setDatasets(data.datasets);
         setCities(data.cities);
         setGeojson(data.geojson);
+        setAirports(data.airports || []);
+        setFlights(data.flights || []);
         // Set initial dataset
         if (data.datasets.length > 0) {
           setActiveDatasetId(data.datasets[0].id);
@@ -90,6 +94,32 @@ function App() {
 
     return { arcs, nodes: topCities };
   }, [cities]);
+
+  // Flight data for airport connections
+  const flightData = useMemo(() => {
+    if (airports.length === 0 || flights.length === 0) return { arcs: [], nodes: [] };
+
+    // Convert airports to nodes format
+    const nodes = airports.map(airport => ({
+      id: airport.id,
+      name: airport.name,
+      city: airport.city,
+      lat: airport.lat,
+      lng: airport.lng,
+      population: airport.passengers,
+      type: airport.type
+    }));
+
+    // Convert flights to arcs format
+    const arcs = flights.map(flight => ({
+      source: flight.from,
+      target: flight.to,
+      value: flight.frequency,
+      label: `${flight.frequency} vuelos/día`
+    }));
+
+    return { arcs, nodes };
+  }, [airports, flights]);
 
   // Handlers
   const handleDatasetChange = (datasetId) => {
@@ -220,6 +250,16 @@ function App() {
           />
         );
 
+      case 'flights':
+        return (
+          <ArcMap
+            arcs={flightData.arcs}
+            nodes={flightData.nodes}
+            showNodes={true}
+            {...commonProps}
+          />
+        );
+
       default:
         return null;
     }
@@ -269,6 +309,7 @@ function App() {
           {mapType === 'heatmap' && 'Densidad poblacional de ciudades'}
           {mapType === 'markers' && 'Click en ciudades para ver detalles'}
           {mapType === 'choropleth' && 'Click en estados para ver estadísticas'}
+          {mapType === 'flights' && 'Rutas aéreas entre aeropuertos de México'}
         </div>
       </div>
     </div>
