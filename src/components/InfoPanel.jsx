@@ -1,4 +1,4 @@
-import { HiX, HiTrendingUp, HiTrendingDown, HiMinus, HiChevronDown } from 'react-icons/hi';
+import { HiX, HiTrendingUp, HiTrendingDown, HiMinus } from 'react-icons/hi';
 import { formatNumber, getDataRange } from '../utils/colorScale.js';
 import { STATE_NAMES } from '../data/mexico-datasets.js';
 import { useIsMobile } from '../utils/useMediaQuery';
@@ -37,127 +37,96 @@ const InfoPanel = ({
   const vsAverage = stats ? value - stats.average : 0;
   const trend = vsAverage > 0 ? 'up' : vsAverage < 0 ? 'down' : 'neutral';
 
-  // Mobile Bottom Sheet
+  // Mobile Modal Card
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-40 animate-fade-in" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/40" />
 
-        {/* Bottom Sheet */}
+        {/* Modal Card */}
         <div
-          className="absolute left-0 right-0 bottom-0 animate-slide-up"
+          className="relative w-full max-w-sm glass-panel rounded-2xl overflow-hidden animate-fade-in"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="glass-panel rounded-t-3xl max-h-[70vh] overflow-hidden flex flex-col">
-            {/* Handle & Close */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50">
-              <button onClick={onClose} className="p-2 -ml-2">
-                <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
-              </button>
-              <button onClick={onClose} className="icon-btn -mr-2">
-                <HiX className="w-5 h-5" />
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="badge badge-emerald text-xs">{selectedRegion.id}</span>
+                  {trend === 'up' && <HiTrendingUp className="w-4 h-4 text-emerald-500" />}
+                  {trend === 'down' && <HiTrendingDown className="w-4 h-4 text-rose-500" />}
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  {regionName}
+                </h2>
+              </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <HiX className="w-5 h-5 text-gray-500" />
               </button>
             </div>
+          </div>
 
-            {/* Content */}
-            <div className="overflow-y-auto custom-scrollbar p-4">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="badge badge-emerald">{selectedRegion.id}</span>
-                    {trend === 'up' && <HiTrendingUp className="w-4 h-4 text-emerald-500" />}
-                    {trend === 'down' && <HiTrendingDown className="w-4 h-4 text-rose-500" />}
-                    {trend === 'neutral' && <HiMinus className="w-4 h-4 text-gray-400" />}
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {regionName}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Main Value Card */}
-              <div className="stat-card mb-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                      {dataset?.name || 'Valor'}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {value != null ? formatNumber(value, dataset?.unit || 'number') : 'N/A'}
-                    </p>
-                  </div>
-                  {stats && (
-                    <div className="text-right">
-                      <span className={`text-sm font-medium ${
-                        trend === 'up' ? 'text-emerald-600' :
-                        trend === 'down' ? 'text-rose-600' : 'text-gray-500'
-                      }`}>
-                        {vsAverage > 0 ? '+' : ''}{formatNumber(vsAverage, dataset?.unit)}
-                      </span>
-                      <p className="text-xs text-gray-400">vs promedio</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats Row */}
+          {/* Content */}
+          <div className="p-4">
+            {/* Main Value */}
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                {dataset?.name || 'Valor'}
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                {value != null ? formatNumber(value, dataset?.unit || 'number') : 'N/A'}
+              </p>
               {stats && (
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="stat-card text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ranking</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      #{stats.total - stats.rank + 1}
-                    </p>
-                  </div>
-                  <div className="stat-card text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Percentil</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {Math.round(stats.percentile)}%
-                    </p>
-                  </div>
-                  <div className="stat-card text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">De</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {stats.total}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Progress Bar */}
-              {stats && (
-                <div className="mb-4">
-                  <div className="flex justify-between text-xs text-gray-500 mb-2">
-                    <span>{formatNumber(stats.min, dataset?.unit)}</span>
-                    <span>{formatNumber(stats.max, dataset?.unit)}</span>
-                  </div>
-                  <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all duration-500"
-                      style={{ width: `${stats.percentile}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Color Scale */}
-              {dataset?.colorScale && (
-                <div className="pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Escala</p>
-                  <div className="h-2 rounded-full overflow-hidden flex">
-                    {dataset.colorScale.map((color, i) => (
-                      <div
-                        key={i}
-                        className="flex-1"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <p className={`text-sm mt-1 ${
+                  trend === 'up' ? 'text-emerald-600' :
+                  trend === 'down' ? 'text-rose-600' : 'text-gray-500'
+                }`}>
+                  {vsAverage > 0 ? '+' : ''}{formatNumber(vsAverage, dataset?.unit)} vs promedio
+                </p>
               )}
             </div>
+
+            {/* Stats Row */}
+            {stats && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Ranking</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-white">
+                    #{stats.total - stats.rank + 1}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Percentil</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-white">
+                    {Math.round(stats.percentile)}%
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase">Total</p>
+                  <p className="text-base font-bold text-gray-900 dark:text-white">
+                    {stats.total}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Progress Bar */}
+            {stats && (
+              <div>
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>{formatNumber(stats.min, dataset?.unit)}</span>
+                  <span>{formatNumber(stats.max, dataset?.unit)}</span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"
+                    style={{ width: `${stats.percentile}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
