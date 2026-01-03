@@ -11,6 +11,7 @@ import {
 } from './components/maps';
 import { loadAllData, getDatasetById, getTopCities } from './utils/dataLoader.js';
 import { toggleTheme } from './utils/darkMode';
+import { useIsMobile } from './utils/useMediaQuery';
 
 /**
  * TerraVista - Modern Geospatial Visualization App
@@ -33,6 +34,7 @@ function App() {
   const [selectedRegionId, setSelectedRegionId] = useState(null);
   const [mapType, setMapType] = useState('choropleth');
   const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark'));
+  const isMobile = useIsMobile();
 
   // Load data from Firebase Storage
   useEffect(() => {
@@ -301,17 +303,19 @@ function App() {
         isVisible={showInfoPanel}
       />
 
-      {/* Map Type Indicator (bottom) */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
-        <div className="glass-panel rounded-full px-4 py-2 text-xs text-gray-600 dark:text-gray-400">
-          {mapType === 'hexagon' && 'Ctrl + Arrastra para rotar • Scroll para zoom'}
-          {mapType === 'arc' && 'Conexiones desde Ciudad de México'}
-          {mapType === 'heatmap' && 'Densidad poblacional de ciudades'}
-          {mapType === 'markers' && 'Click en ciudades para ver detalles'}
-          {mapType === 'choropleth' && 'Click en estados para ver estadísticas'}
-          {mapType === 'flights' && 'Rutas aéreas entre aeropuertos de México'}
+      {/* Map Type Indicator (bottom) - Hidden on mobile due to bottom sheet */}
+      {!isMobile && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+          <div className="glass-panel rounded-full px-4 py-2 text-xs text-gray-600 dark:text-gray-400">
+            {mapType === 'hexagon' && 'Ctrl + Arrastra para rotar • Scroll para zoom'}
+            {mapType === 'arc' && 'Conexiones desde Ciudad de México'}
+            {mapType === 'heatmap' && 'Densidad poblacional de ciudades'}
+            {mapType === 'markers' && 'Click en ciudades para ver detalles'}
+            {mapType === 'choropleth' && 'Click en estados para ver estadísticas'}
+            {mapType === 'flights' && 'Rutas aéreas entre aeropuertos de México'}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

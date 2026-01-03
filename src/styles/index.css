@@ -235,3 +235,34 @@
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out forwards;
 }
+
+/* Slide Up for Mobile Bottom Sheets */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Mobile-specific utilities */
+@media (max-width: 767px) {
+  .glass-panel {
+    --glass-bg: rgba(255, 255, 255, 0.95);
+  }
+
+  .dark .glass-panel {
+    --glass-bg: rgba(17, 24, 39, 0.95);
+  }
+
+  .stat-card {
+    @apply p-3 rounded-xl;
+  }
+}
