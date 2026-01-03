@@ -1,374 +1,262 @@
-# GeoAnalytics - Geospatial Dashboard
+# TerraVista - Visualización Geoespacial de México
 
-A modern, modular, and highly reusable geospatial data visualization dashboard built with React, Tailwind CSS, Flowbite, and Leaflet.js.
+Una aplicación moderna de visualización de datos geoespaciales construida con React, react-map-gl, deck.gl, Tailwind CSS y Flowbite.
 
-![Dashboard Preview](https://img.shields.io/badge/React-18.3-blue?logo=react) ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?logo=tailwindcss) ![Leaflet](https://img.shields.io/badge/Leaflet-1.9-green?logo=leaflet)
+![React](https://img.shields.io/badge/React-18.3-blue?logo=react) ![deck.gl](https://img.shields.io/badge/deck.gl-9.0-purple) ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?logo=tailwindcss) ![MapLibre](https://img.shields.io/badge/MapLibre-5.0-green)
 
-## Features
+## Características
 
-- **Modern BI Dashboard Design**: Clean, professional interface using Flowbite components
-- **Interactive Choropleth Maps**: Dynamic color-coded regions with hover tooltips
-- **Multiple Datasets**: Switch between different data layers instantly
-- **Responsive Layout**: Sidebar navigation, map view, and detailed data panel
-- **Completely Reusable**: Modular architecture allows easy data and GeoJSON replacement
-- **Real-time Statistics**: Automatic calculations of min, max, average, and percentiles
-- **Progressive Interactions**: Click regions for details, hover for quick stats
+- **5 Tipos de Mapas**: Coroplético, Marcadores, Mapa de Calor, Hexágonos 3D, y Arcos
+- **32 Estados de México**: Datos demográficos, económicos y sociales
+- **50+ Ciudades Principales**: Con coordenadas y metadatos
+- **6 Datasets**: Población, PIB, Densidad, Desempleo, IDH, Turismo
+- **Modo Oscuro**: Interfaz adaptable con tema claro/oscuro
+- **Visualizaciones WebGL**: Renderizado de alto rendimiento con deck.gl
 
-## Architecture
+## Tipos de Visualización
 
-### Component Structure
+| Tipo | Descripción | Uso Ideal |
+|------|-------------|-----------|
+| 🗺️ **Coroplético** | Regiones coloreadas por valor | Comparar datos entre estados |
+| 📍 **Marcadores** | Puntos de ciudades con iconos | Ubicar ciudades y puntos de interés |
+| 🔥 **Mapa de Calor** | Densidad de datos | Visualizar concentración poblacional |
+| ⬡ **Hexágonos 3D** | Agregación hexagonal elevada | Patrones de distribución |
+| 🌐 **Arcos** | Conexiones entre ciudades | Rutas comerciales, migración |
+
+## Estructura del Proyecto
 
 ```
 src/
 ├── components/
-│   ├── MapContainer.jsx       # Reusable map component (data-agnostic)
-│   ├── NavigationSidebar.jsx  # Dataset selection sidebar
-│   └── DataPanel.jsx          # Region details and statistics
+│   ├── maps/
+│   │   ├── BaseMap.jsx        # Mapa base con MapLibre
+│   │   ├── ChoroplethMap.jsx  # Mapa coroplético
+│   │   ├── MarkersMap.jsx     # Mapa de marcadores
+│   │   ├── HeatmapMap.jsx     # Mapa de calor
+│   │   ├── HexagonMap.jsx     # Hexágonos 3D
+│   │   ├── ArcMap.jsx         # Arcos de conexión
+│   │   └── index.js           # Exportaciones
+│   ├── NavigationSidebar.jsx  # Barra lateral
+│   └── DataPanel.jsx          # Panel de estadísticas
 ├── data/
-│   ├── datasets.js            # Dataset definitions
-│   └── us-states.geo.json     # GeoJSON boundaries
+│   ├── mexico-states.geo.json # GeoJSON de estados
+│   ├── mexico-cities.js       # Datos de ciudades
+│   └── mexico-datasets.js     # Datasets mexicanos
 ├── utils/
-│   ├── colorScale.js          # Color calculation utilities
-│   └── mapHelpers.js          # Leaflet helper functions
+│   ├── colorScale.js          # Escalas de color
+│   ├── mapHelpers.js          # Utilidades de mapa
+│   └── darkMode.js            # Toggle de tema
 ├── styles/
-│   └── index.css              # Global styles and Tailwind
-├── App.jsx                    # Main application with state management
-└── main.jsx                   # React entry point
+│   └── index.css              # Estilos globales
+├── App.jsx                    # Componente principal
+└── main.jsx                   # Punto de entrada
 ```
 
-### Data Flow
+## Instalación
 
-```
-datasets.js → App.jsx (state) → MapContainer + DataPanel
-geojson → App.jsx → MapContainer
-User interactions → App.jsx → Update state → Re-render
-```
+### Prerrequisitos
 
-## Installation
+- Node.js 18+ y npm
 
-### Prerequisites
+### Configuración
 
-- Node.js 18+ and npm/yarn
-
-### Setup
-
-1. Clone the repository:
+1. Clonar el repositorio:
 ```bash
 git clone <repository-url>
 cd carto
 ```
 
-2. Install dependencies:
+2. Instalar dependencias:
 ```bash
 npm install
 ```
 
-3. Start the development server:
+3. Iniciar servidor de desarrollo:
 ```bash
 npm run dev
 ```
 
-4. Open your browser at `http://localhost:3000`
+4. Abrir en navegador: `http://localhost:5173`
 
-### Build for production:
+### Build para producción:
 ```bash
 npm run build
 npm run preview
 ```
 
-## How to Add a New Dataset
+## Agregar Nuevos Datos
 
-The architecture is designed to make adding datasets extremely simple. Follow these steps:
+### Agregar un Dataset
 
-### Step 1: Define Your Dataset
-
-Open `src/data/datasets.js` and add a new dataset object:
+Edita `src/data/mexico-datasets.js`:
 
 ```javascript
 export const myNewDataset = {
-  id: 'my-new-metric',           // Unique identifier
-  name: 'My New Metric',         // Display name in UI
-  description: 'Description of what this data represents',
-  colorScale: COLOR_SCALES.blue, // Choose from: blue, green, orange, purple, red
-  unit: 'number',                // Options: 'number', 'percent', 'currency'
+  id: 'mi-metrica',
+  name: 'Mi Métrica',
+  description: 'Descripción de los datos',
+  colorScale: COLOR_SCALES.blue,
+  unit: 'number', // 'number' | 'percent' | 'currency'
   data: {
-    'CA': 12345,                 // Region ID → Value
-    'TX': 67890,
-    'FL': 54321,
-    // ... more regions
+    'AGU': 12345,
+    'BCN': 67890,
+    // ... todos los estados
   }
 };
-```
 
-### Step 2: Add to DATASETS Array
-
-```javascript
-export const DATASETS = [
-  populationDataset,
-  gdpDataset,
-  unemploymentDataset,
-  myNewDataset  // ← Add your dataset here
+// Agregar al array MEXICO_DATASETS
+export const MEXICO_DATASETS = [
+  ...existingDatasets,
+  myNewDataset
 ];
 ```
 
-That's it! Your new dataset will automatically appear in the sidebar and work with the map.
+### Agregar Ciudades
 
-### Dataset Requirements
-
-- **id**: Must be unique across all datasets
-- **data**: Keys must match the `id` property in your GeoJSON features
-- **colorScale**: Choose an appropriate color scheme for your data type
-- **unit**: Determines how numbers are formatted in the UI
-
-## How to Replace the GeoJSON
-
-### Option 1: Replace the File
-
-1. Replace `src/data/us-states.geo.json` with your own GeoJSON file
-2. Ensure your GeoJSON follows this structure:
-
-```json
-{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "REGION_ID",    // This must match dataset keys
-        "name": "Region Name" // Display name
-      },
-      "geometry": { ... }
-    }
-  ]
-}
-```
-
-### Option 2: Load from API
-
-Edit `src/App.jsx` to fetch from an API:
+Edita `src/data/mexico-cities.js`:
 
 ```javascript
-useEffect(() => {
-  const loadGeoJSON = async () => {
-    try {
-      setIsLoadingGeoJSON(true);
-      const response = await fetch('https://your-api.com/geojson');
-      const data = await response.json();
-      setGeojson(data);
-    } catch (error) {
-      console.error('Error loading GeoJSON:', error);
-    } finally {
-      setIsLoadingGeoJSON(false);
-    }
-  };
-  loadGeoJSON();
-}, []);
+export const MEXICO_CITIES = [
+  ...existingCities,
+  {
+    id: 'nueva-ciudad',
+    name: 'Nueva Ciudad',
+    state: 'JAL',
+    lat: 20.1234,
+    lng: -103.5678,
+    population: 100000,
+    type: 'medium' // capital | major | large | medium | tourist | industrial
+  }
+];
 ```
 
-### Important Notes
+## API de Componentes
 
-- The `id` property in GeoJSON features must match the keys in your dataset's `data` object
-- If you use a different property name for IDs, update the `idProperty` prop in `App.jsx`:
+### ChoroplethMap
 
-```javascript
-<MapContainer
-  idProperty="your_custom_id_field"  // ← Change this
-  // ... other props
+```jsx
+<ChoroplethMap
+  geojson={Object}        // GeoJSON FeatureCollection
+  data={Object}           // { regionId: value }
+  colorScale={Array}      // Colores hex
+  onRegionClick={Function}
+  selectedRegion={String}
+  dataUnit={String}       // 'number' | 'percent' | 'currency'
+  isDarkMode={Boolean}
 />
 ```
 
-## Customization
+### MarkersMap
 
-### Change Color Schemes
+```jsx
+<MarkersMap
+  cities={Array}          // Array de ciudades
+  onCityClick={Function}
+  selectedCity={String}
+  showLabels={Boolean}
+  isDarkMode={Boolean}
+/>
+```
 
-Edit `src/utils/colorScale.js` to add new color scales:
+### HeatmapMap
+
+```jsx
+<HeatmapMap
+  data={Array}            // [{ lng, lat, weight }]
+  radiusPixels={Number}
+  intensity={Number}
+  threshold={Number}
+  isDarkMode={Boolean}
+/>
+```
+
+### HexagonMap
+
+```jsx
+<HexagonMap
+  data={Array}            // [{ lng, lat, weight }]
+  radius={Number}         // Radio en metros
+  elevationScale={Number}
+  extruded={Boolean}
+  coverage={Number}       // 0-1
+  isDarkMode={Boolean}
+/>
+```
+
+### ArcMap
+
+```jsx
+<ArcMap
+  arcs={Array}            // [{ source, target, value }]
+  nodes={Array}           // [{ id, name, lng, lat }]
+  showNodes={Boolean}
+  isDarkMode={Boolean}
+/>
+```
+
+## Tecnologías
+
+- **React 18.3**: Framework UI
+- **Vite 5.4**: Build tool
+- **react-map-gl 8.1**: Wrapper de MapLibre GL
+- **deck.gl 9.0**: Visualizaciones WebGL de alto rendimiento
+- **MapLibre GL 5.0**: Renderizado de mapas
+- **Tailwind CSS 3.4**: Framework CSS
+- **Flowbite React**: Componentes UI
+- **React Icons**: Iconos
+
+## Datasets Incluidos
+
+| Dataset | Descripción | Unidad |
+|---------|-------------|--------|
+| Población | Población total por estado (2024) | Número |
+| PIB per Cápita | Producto Interno Bruto per cápita | MXN |
+| Densidad | Habitantes por km² | Número |
+| Desempleo | Tasa de desempleo Q4 2024 | Porcentaje |
+| IDH | Índice de Desarrollo Humano | Índice |
+| Turismo | Visitantes anuales en millones | Número |
+
+## Ciudades por Tipo
+
+- **Capital**: Ciudad de México
+- **Áreas Metropolitanas**: Guadalajara, Monterrey, Puebla, Tijuana, León, etc.
+- **Ciudades Grandes**: Mérida, Aguascalientes, Hermosillo, etc.
+- **Destinos Turísticos**: Cancún, Los Cabos, Puerto Vallarta, Playa del Carmen
+- **Centros Industriales**: Celaya, Irapuato, Tampico, Monclova
+
+## Personalización
+
+### Cambiar Colores
+
+Edita `src/utils/colorScale.js`:
 
 ```javascript
 export const COLOR_SCALES = {
-  // Add your custom scale
-  custom: [
-    '#fef3c7', // lightest
-    '#fcd34d',
-    '#f59e0b',
-    '#d97706',
-    '#92400e'  // darkest
-  ]
+  custom: ['#color1', '#color2', '#color3', ...]
 };
 ```
 
-### Modify Map Style
+### Cambiar Estilo del Mapa
 
-Edit the tile layer in `src/components/MapContainer.jsx`:
+Los mapas usan estilos de CARTO. Puedes cambiarlos en cada componente:
 
-```javascript
-window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '...',
-}).addTo(map);
-```
+- **Claro**: `https://basemaps.cartocdn.com/gl/positron-gl-style/style.json`
+- **Oscuro**: `https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json`
+- **Calles**: `https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json`
 
-Popular tile providers:
-- **OpenStreetMap**: `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`
-- **CartoDB Light**: `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png`
-- **CartoDB Dark**: `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`
-- **Stamen Terrain**: `https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg`
+## Roadmap
 
-### Update Sidebar Branding
+- [ ] Datos en tiempo real via API
+- [ ] Exportar mapas como imagen
+- [ ] Filtros y búsqueda
+- [ ] Animaciones temporales
+- [ ] Mapas mundiales
+- [ ] Más tipos de visualización
 
-Edit `src/components/NavigationSidebar.jsx`:
-
-```javascript
-<h1 className="text-2xl font-bold text-gray-900">
-  Your Brand Name
-</h1>
-```
-
-## Component API
-
-### MapContainer
-
-```jsx
-<MapContainer
-  geojson={Object}        // GeoJSON FeatureCollection
-  data={Object}           // { regionId: value }
-  colorScale={Array}      // Array of hex colors
-  onRegionClick={Function} // Callback: (regionId) => void
-  selectedRegion={String}  // Currently selected region ID
-  dataUnit={String}        // 'number' | 'percent' | 'currency'
-  idProperty={String}      // GeoJSON property for region ID (default: 'id')
-/>
-```
-
-### NavigationSidebar
-
-```jsx
-<NavigationSidebar
-  datasets={Array}         // Array of dataset objects
-  activeDataset={String}   // ID of active dataset
-  onDatasetChange={Function} // Callback: (datasetId) => void
-/>
-```
-
-### DataPanel
-
-```jsx
-<DataPanel
-  selectedRegion={Object}  // { id, value }
-  dataset={Object}         // Current dataset object
-  geojson={Object}         // GeoJSON for region names
-  idProperty={String}      // Property for region ID (default: 'id')
-/>
-```
-
-## Utilities
-
-### colorScale.js
-
-Pure functions for color calculations:
-
-```javascript
-import { getColor, formatNumber, getDataRange } from './utils/colorScale.js';
-
-// Get color for a value
-const color = getColor(500, 0, 1000, COLOR_SCALES.blue);
-
-// Format a number
-const formatted = formatNumber(1234567, 'number'); // "1,234,567"
-
-// Get min/max from dataset
-const { min, max } = getDataRange(dataObject);
-```
-
-### mapHelpers.js
-
-Leaflet utilities:
-
-```javascript
-import { loadLeaflet, findFeatureById } from './utils/mapHelpers.js';
-
-// Dynamically load Leaflet
-await loadLeaflet();
-
-// Find a feature in GeoJSON
-const feature = findFeatureById(geojson, 'CA', 'id');
-```
-
-## Technologies Used
-
-- **React 18.3**: UI framework with functional components and hooks
-- **Vite 5.4**: Lightning-fast build tool and dev server
-- **Tailwind CSS 3.4**: Utility-first CSS framework
-- **Flowbite React 0.10**: Pre-built React components
-- **Leaflet 1.9**: Open-source interactive maps library
-- **React Icons**: Icon library for UI elements
-
-## Best Practices Implemented
-
-1. **Separation of Concerns**: Data, logic, and presentation are separated
-2. **Pure Functions**: Utility functions are side-effect free
-3. **Component Reusability**: MapContainer is completely data-agnostic
-4. **State Management**: Centralized in App.jsx with unidirectional data flow
-5. **Dynamic Loading**: Leaflet loaded on-demand to avoid SSR issues
-6. **Responsive Design**: Mobile-friendly layout with Tailwind
-7. **Type Safety**: Clear prop interfaces documented for each component
-8. **Performance**: React.memo potential for optimization if needed
-
-## Troubleshooting
-
-### Map not loading
-- Check browser console for Leaflet loading errors
-- Ensure CDN is accessible
-- Verify GeoJSON format is valid
-
-### Regions not colored
-- Ensure dataset keys match GeoJSON `id` properties
-- Check that data values are numbers, not strings
-- Verify colorScale is properly imported
-
-### Sidebar components not styled
-- Run `npm install` to ensure Flowbite is installed
-- Check that Tailwind config includes Flowbite content paths
-- Verify `flowbite/plugin` is in `tailwind.config.js`
-
-## Performance Optimization
-
-For large datasets (1000+ regions):
-
-1. **Use React.memo**:
-```javascript
-export default React.memo(MapContainer);
-```
-
-2. **Debounce interactions**:
-```javascript
-import { debounce } from 'lodash';
-const debouncedClick = debounce(handleRegionClick, 300);
-```
-
-3. **Simplify GeoJSON**: Use tools like [mapshaper](https://mapshaper.org/) to reduce complexity
-
-4. **Lazy load datasets**: Split datasets into separate files and load on demand
-
-## License
+## Licencia
 
 MIT
 
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check existing documentation
-- Review component source code comments
-
 ---
 
-**Built with modern web technologies for maximum maintainability and reusability.**
+**TerraVista** - Visualización geoespacial moderna para México 🇲🇽

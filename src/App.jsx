@@ -1,52 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import NavigationSidebar from './components/NavigationSidebar.jsx';
-import MapContainer from './components/MapContainer.jsx';
 import DataPanel from './components/DataPanel.jsx';
-import { DATASETS, getDatasetById } from './data/datasets.js';
+import {
+  ChoroplethMap,
+  MarkersMap,
+  HeatmapMap,
+  HexagonMap,
+  ArcMap,
+  MAP_TYPES
+} from './components/maps';
+import { MEXICO_DATASETS, getDatasetById, STATE_NAMES } from './data/mexico-datasets.js';
+import { MEXICO_CITIES, getTopCities } from './data/mexico-cities.js';
 import { toggleTheme } from './utils/darkMode';
 import { HiOutlineMoon, HiOutlineSun, HiInformationCircle } from 'react-icons/hi';
 import { Dropdown } from 'flowbite-react';
-import usStatesGeoJSON from './data/us-states.geo.json';
+import mexicoStatesGeoJSON from './data/mexico-states.geo.json';
 
 /**
- * Main App Component
+ * TerraVista - Geospatial Visualization App for Mexico
  *
- * Manages global state for the Geospatial Dashboard:
- * - Active dataset selection
- * - Selected region
- * - GeoJSON data
- *
- * ARCHITECTURE NOTES:
- * This component demonstrates the separation of concerns:
- * 1. Data is imported from datasets.js (easily replaceable)
- * 2. GeoJSON is loaded dynamically (can be from API)
- * 3. MapContainer is completely reusable (just pass props)
- * 4. State is managed here and flows down
- *
- * HOW TO EXTEND:
- * - Add new datasets to datasets.js
- * - Replace GeoJSON file with your own
- * - Add new data panels or visualizations
- * - Everything will work automatically!
+ * Features:
+ * - Multiple map visualization types (Choropleth, Markers, Heatmap, Hexagon, Arc)
+ * - 32 Mexican states with demographic data
+ * - 50+ major cities with coordinates
+ * - 6 different datasets
  *
  * @component
  */
 function App() {
   // State management
-  const [activeDatasetId, setActiveDatasetId] = useState(DATASETS[0]?.id || null);
+  const [activeDatasetId, setActiveDatasetId] = useState(MEXICO_DATASETS[0]?.id || null);
   const [selectedRegionId, setSelectedRegionId] = useState(null);
-  const [geojson, setGeojson] = useState(null);
-  const [isLoadingGeoJSON, setIsLoadingGeoJSON] = useState(true);
+  const [mapType, setMapType] = useState('choropleth');
   const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark'));
 
-  // Observe changes to the 'dark' class on the html element
+  // Observe dark mode changes
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDarkMode(document.documentElement.classList.contains('dark'));
     });
-
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
     return () => observer.disconnect();
   }, []);
 
@@ -56,85 +49,172 @@ function App() {
     ? { id: selectedRegionId, value: activeDataset.data[selectedRegionId] }
     : null;
 
-  // Load GeoJSON on mount
-  useEffect(() => {
-    console.log('GeoJSON loaded:', usStatesGeoJSON);
-    console.log('GeoJSON type:', typeof usStatesGeoJSON);
-    console.log('GeoJSON features count:', usStatesGeoJSON?.features?.length);
-    console.log('Active dataset:', activeDataset);
-    console.log('DATASETS:', DATASETS);
+  // Generate sample arc connections (top 10 cities connected to CDMX)
+  const arcData = useMemo(() => {
+    const topCities = getTopCities(15);
+    const cdmx = topCities.find(c => c.id === 'cdmx');
+    if (!cdmx) return { arcs: [], nodes: topCities };
 
-    setGeojson(usStatesGeoJSON);
-    setIsLoadingGeoJSON(false);
+    const arcs = topCities
+      .filter(c => c.id !== 'cdmx')
+      .map(city => ({
+        source: 'cdmx',
+        target: city.id,
+        value: city.population / 100000,
+        label: `Conexión comercial`
+      }));
+
+    return { arcs, nodes: topCities };
   }, []);
 
   // Event handlers
   const handleDatasetChange = (datasetId) => {
     setActiveDatasetId(datasetId);
-    // Optionally reset selected region when changing datasets
-    // setSelectedRegionId(null);
+  };
+
+  const handleMapTypeChange = (type) => {
+    setMapType(type);
+    setSelectedRegionId(null);
   };
 
   const handleRegionClick = (regionId) => {
     setSelectedRegionId(regionId);
   };
 
-  // Loading state
-  if (isLoadingGeoJSON) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-          <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">Loading Dashboard...</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Preparing geospatial data</p>
-        </div>
-      </div>
-    );
-  }
+  const handleCityClick = (city) => {
+    setSelectedRegionId(city.state);
+  };
+
+  // Render the appropriate map type
+  const renderMap = () => {
+    switch (mapType) {
+      case 'choropleth':
+        return (
+          <ChoroplethMap
+            geojson={mexicoStatesGeoJSON}
+            data={activeDataset?.data || {}}
+            colorScale={activeDataset?.colorScale || []}
+            onRegionClick={handleRegionClick}
+            selectedRegion={selectedRegionId}
+            dataUnit={activeDataset?.unit}
+            idProperty="id"
+            isDarkMode={isDarkMode}
+          />
+        );
+
+      case 'markers':
+        return (
+          <MarkersMap
+            cities={MEXICO_CITIES}
+            onCityClick={handleCityClick}
+            selectedCity={null}
+            showLabels={true}
+            isDarkMode={isDarkMode}
+          />
+        );
+
+      case 'heatmap':
+        return (
+          <HeatmapMap
+            data={MEXICO_CITIES.map(c => ({
+              lng: c.lng,
+              lat: c.lat,
+              weight: c.population
+            }))}
+            radiusPixels={50}
+            intensity={1}
+            threshold={0.03}
+            isDarkMode={isDarkMode}
+          />
+        );
+
+      case 'hexagon':
+        return (
+          <HexagonMap
+            data={MEXICO_CITIES.map(c => ({
+              lng: c.lng,
+              lat: c.lat,
+              weight: c.population,
+              population: c.population
+            }))}
+            radius={30000}
+            elevationScale={500}
+            extruded={true}
+            coverage={0.8}
+            isDarkMode={isDarkMode}
+          />
+        );
+
+      case 'arc':
+        return (
+          <ArcMap
+            arcs={arcData.arcs}
+            nodes={arcData.nodes}
+            showNodes={true}
+            isDarkMode={isDarkMode}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Get map type info
+  const currentMapType = MAP_TYPES[mapType];
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar Navigation - 280px fixed width */}
+      {/* Sidebar Navigation */}
       <div className="w-80 flex-shrink-0">
         <NavigationSidebar
-          datasets={DATASETS}
+          datasets={MEXICO_DATASETS}
           activeDataset={activeDatasetId}
           onDatasetChange={handleDatasetChange}
+          mapType={mapType}
+          onMapTypeChange={handleMapTypeChange}
         />
       </div>
 
-      {/* Main Content Area - Flexible */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {activeDataset?.name || 'Dashboard'}
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {activeDataset?.name || 'Dashboard'}
+                </h2>
+                <span className="px-2.5 py-1 text-xs font-medium bg-gradient-to-r from-emerald-100 to-blue-100 text-emerald-700 rounded-full dark:from-emerald-900/40 dark:to-blue-900/40 dark:text-emerald-300">
+                  {currentMapType?.icon} {currentMapType?.name}
+                </span>
+              </div>
               <p className="text-sm text-gray-600 mt-1 dark:text-gray-400">
                 {activeDataset?.description || 'Select a dataset to begin'}
               </p>
             </div>
             <div className="flex items-center gap-4">
-              {/* How to Use Instructions */}
+              {/* How to Use */}
               <Dropdown
                 label=""
                 renderTrigger={() => (
-                  <button className="flex items-center justify-center w-8 h-8 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors duration-200">
+                  <button className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors">
                     <HiInformationCircle className="w-5 h-5" />
                   </button>
                 )}
                 placement="bottom-start"
               >
                 <Dropdown.Header>
-                  <span className="block text-sm font-semibold">How to use</span>
+                  <span className="block text-sm font-semibold">Cómo usar TerraVista</span>
                 </Dropdown.Header>
                 <Dropdown.Item>
-                  <ul className="text-xs text-gray-700 space-y-1 p-4 text-left dark:text-gray-200">
-                    <li>• Click on regions to see details</li>
-                    <li>• Switch datasets to compare metrics</li>
-                    <li>• Hover over regions for quick stats</li>
+                  <ul className="text-xs text-gray-700 space-y-2 p-3 text-left dark:text-gray-200">
+                    <li>• Selecciona un tipo de mapa en la barra lateral</li>
+                    <li>• Cambia entre datasets para comparar métricas</li>
+                    <li>• Click en regiones para ver detalles</li>
+                    <li>• Usa el scroll para hacer zoom</li>
+                    <li>• Arrastra para mover el mapa</li>
                   </ul>
                 </Dropdown.Item>
               </Dropdown>
@@ -142,61 +222,46 @@ function App() {
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleTheme}
-                className="flex items-center justify-center w-8 h-8 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors duration-200"
-                title="Toggle Dark Mode"
+                className="flex items-center justify-center w-9 h-9 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+                title="Cambiar tema"
               >
                 {isDarkMode ? <HiOutlineSun className="w-5 h-5" /> : <HiOutlineMoon className="w-5 h-5" />}
               </button>
 
-              <div className="text-right">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Active Dataset</p>
+              {/* Region indicator */}
+              <div className="text-right border-l border-gray-200 dark:border-gray-700 pl-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Región Seleccionada</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {activeDataset?.name || 'None'}
+                  {selectedRegionId ? STATE_NAMES[selectedRegionId] || selectedRegionId : 'Ninguna'}
                 </p>
               </div>
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Live data" />
+
+              {/* Live indicator */}
+              <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" title="Datos activos" />
             </div>
           </div>
         </div>
 
         {/* Map and Data Panel */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Map Container - Takes remaining space */}
-          <div className="flex-1 p-6">
-            <div className="h-full bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-              {activeDataset && geojson ? (
-                <MapContainer
-                  geojson={geojson}
-                  data={activeDataset.data}
-                  colorScale={activeDataset.colorScale}
-                  onRegionClick={handleRegionClick}
-                  selectedRegion={selectedRegionId}
-                  dataUnit={activeDataset.unit}
-                  idProperty="id"
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                  <div className="text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                    <p className="font-semibold">No data available</p>
-                    <p className="text-sm mt-2">Please select a dataset from the sidebar</p>
-                  </div>
-                </div>
-              )}
+          {/* Map Container */}
+          <div className="flex-1 p-4">
+            <div className="h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+              {renderMap()}
             </div>
           </div>
 
-          {/* Data Panel - 400px fixed width */}
-          <div className="w-96 flex-shrink-0 bg-white border-l border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-            <DataPanel
-              selectedRegion={selectedRegionData}
-              dataset={activeDataset}
-              geojson={geojson}
-              idProperty="id"
-            />
-          </div>
+          {/* Data Panel */}
+          {(mapType === 'choropleth' || mapType === 'markers') && (
+            <div className="w-96 flex-shrink-0 bg-white border-l border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+              <DataPanel
+                selectedRegion={selectedRegionData}
+                dataset={activeDataset}
+                geojson={mexicoStatesGeoJSON}
+                idProperty="id"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

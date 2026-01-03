@@ -1,68 +1,127 @@
 import { Sidebar } from "flowbite-react";
-import { HiChartPie, HiDatabase, HiInformationCircle } from "react-icons/hi";
+import {
+  HiChartPie,
+  HiUserGroup,
+  HiCurrencyDollar,
+  HiOfficeBuilding,
+  HiTrendingDown,
+  HiAcademicCap,
+  HiGlobe,
+  HiMap,
+  HiLocationMarker,
+  HiFire,
+  HiCube,
+  HiArrowsExpand
+} from "react-icons/hi";
+import { MAP_TYPES } from './maps';
 
 /**
  * NavigationSidebar Component
  *
- * Sidebar navigation using Flowbite React components.
- * Allows users to select between different datasets.
- *
- * HOW TO EXTEND:
- * 1. Add new datasets to the datasets array in datasets.js
- * 2. The sidebar will automatically display them
- * 3. No changes needed to this component!
+ * Sidebar navigation for TerraVista.
+ * Allows users to select map types and datasets.
  *
  * @component
- * @param {Object} props - Component props
- * @param {Array} props.datasets - Array of dataset objects
- * @param {string} props.activeDataset - ID of currently active dataset
- * @param {Function} props.onDatasetChange - Callback when dataset is selected
- * @param {boolean} props.isCollapsed - Whether sidebar is collapsed to icon-only
- * @param {Function} props.onToggleCollapse - Callback to toggle collapse state
  */
 const NavigationSidebar = ({
   datasets = [],
   activeDataset,
   onDatasetChange,
+  mapType = 'choropleth',
+  onMapTypeChange
 }) => {
   // Icon mapping for different dataset types
   const getDatasetIcon = (datasetId) => {
     const iconMap = {
-      population: HiChartPie,
-      gdp: HiDatabase,
-      unemployment: HiInformationCircle,
+      population: HiUserGroup,
+      gdp: HiCurrencyDollar,
+      density: HiOfficeBuilding,
+      unemployment: HiTrendingDown,
+      hdi: HiAcademicCap,
+      tourism: HiGlobe
     };
-    return iconMap[datasetId] || HiDatabase;
+    return iconMap[datasetId] || HiChartPie;
+  };
+
+  // Icon mapping for map types
+  const getMapTypeIcon = (typeId) => {
+    const iconMap = {
+      choropleth: HiMap,
+      markers: HiLocationMarker,
+      heatmap: HiFire,
+      hexagon: HiCube,
+      arc: HiArrowsExpand
+    };
+    return iconMap[typeId] || HiMap;
   };
 
   return (
     <div className="h-full bg-white border-r border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-      <Sidebar aria-label="Dashboard navigation" className="h-full">
-        <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <svg
-              className="w-8 h-8 text-blue-600 dark:text-blue-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12 1.586l-4 4v12.828l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 5.293L14 1.586v12.828l2.293 2.293A1 1 0 0018 16V6a1 1 0 00-.293-.707z"
-                clipRule="evenodd"
-              />
-            </svg>
-            GeoAnalytics
+      <Sidebar aria-label="TerraVista navigation" className="h-full">
+        {/* Logo & Branding */}
+        <div className="px-4 py-5 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+              TerraVista
+            </span>
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            Geospatial Data Dashboard
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 ml-1">
+            Visualización Geoespacial de México
           </p>
         </div>
 
         <Sidebar.Items>
+          {/* Map Type Selector */}
           <Sidebar.ItemGroup>
             <div className="px-3 py-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                Data Layers
+                Tipo de Mapa
+              </p>
+            </div>
+
+            <div className="px-2 space-y-1">
+              {Object.values(MAP_TYPES).map((type) => {
+                const Icon = getMapTypeIcon(type.id);
+                const isActive = type.id === mapType;
+
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => onMapTypeChange?.(type.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200 ${
+                      isActive
+                        ? "bg-gradient-to-r from-emerald-50 to-blue-50 text-emerald-700 border border-emerald-200 dark:from-emerald-900/30 dark:to-blue-900/30 dark:text-emerald-300 dark:border-emerald-800"
+                        : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm">{type.name}</span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {type.description}
+                      </span>
+                    </div>
+                    <span className="text-lg">{type.icon}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </Sidebar.ItemGroup>
+
+          {/* Dataset Selector */}
+          <Sidebar.ItemGroup>
+            <div className="px-3 py-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                Datos
               </p>
             </div>
 
@@ -76,21 +135,35 @@ const NavigationSidebar = ({
                   icon={Icon}
                   active={isActive}
                   onClick={() => onDatasetChange(dataset.id)}
-                  className={`cursor-pointer transition-smooth ${
+                  className={`cursor-pointer transition-all duration-200 ${
                     isActive
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-                      : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                      ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                      : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-semibold">{dataset.name}</span>
-                    <span className="text-xs text-gray-500 mt-1 dark:text-gray-400">
+                    <span className="font-medium">{dataset.name}</span>
+                    <span className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
                       {dataset.description}
                     </span>
                   </div>
                 </Sidebar.Item>
               );
             })}
+          </Sidebar.ItemGroup>
+
+          {/* Info Section */}
+          <Sidebar.ItemGroup>
+            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg mx-2">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <HiGlobe className="w-4 h-4" />
+                <span>32 Estados de México</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <HiLocationMarker className="w-4 h-4" />
+                <span>50+ Ciudades Principales</span>
+              </div>
+            </div>
           </Sidebar.ItemGroup>
         </Sidebar.Items>
       </Sidebar>
