@@ -9,24 +9,58 @@ import {
   HexagonMap,
   ArcMap
 } from './components/maps';
-import { MEXICO_DATASETS, getDatasetById } from './data/mexico-datasets.js';
-import { MEXICO_CITIES, getTopCities } from './data/mexico-cities.js';
+import { loadAllData, getDatasetById, getTopCities } from './utils/dataLoader.js';
 import { toggleTheme } from './utils/darkMode';
 import { useIsMobile } from './utils/useMediaQuery';
-import mexicoStatesGeoJSON from './data/mexico-states.geo.json';
 
 /**
  * TerraVista - Modern Geospatial Visualization App
  *
  * Features a full-screen map with floating glassmorphic control panels.
+ * Data is loaded from Firebase Storage at runtime.
  */
 function App() {
-  // State
-  const [activeDatasetId, setActiveDatasetId] = useState(MEXICO_DATASETS[0]?.id || null);
+  // Data state
+  const [datasets, setDatasets] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [geojson, setGeojson] = useState(null);
+  const [airports, setAirports] = useState([]);
+  const [flights, setFlights] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // UI state
+  const [activeDatasetId, setActiveDatasetId] = useState(null);
   const [selectedRegionId, setSelectedRegionId] = useState(null);
   const [mapType, setMapType] = useState('choropleth');
   const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark'));
   const isMobile = useIsMobile();
+
+  // Load data from Firebase Storage
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await loadAllData();
+        setDatasets(data.datasets);
+        setCities(data.cities);
+        setGeojson(data.geojson);
+        setAirports(data.airports || []);
+        setFlights(data.flights || []);
+        // Set initial dataset
+        if (data.datasets.length > 0) {
+          setActiveDatasetId(data.datasets[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        setError(err.message || 'Failed to load data');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   // Observe dark mode changes
   useEffect(() => {
@@ -38,14 +72,16 @@ function App() {
   }, []);
 
   // Derived state
-  const activeDataset = getDatasetById(activeDatasetId);
+  const activeDataset = getDatasetById(datasets, activeDatasetId);
   const selectedRegionData = selectedRegionId && activeDataset
     ? { id: selectedRegionId, value: activeDataset.data[selectedRegionId] }
     : null;
 
   // Arc data for connections
   const arcData = useMemo(() => {
-    const topCities = getTopCities(15);
+    if (cities.length === 0) return { arcs: [], nodes: [] };
+
+    const topCities = getTopCities(cities, 15);
     const cdmx = topCities.find(c => c.id === 'cdmx');
     if (!cdmx) return { arcs: [], nodes: topCities };
 
@@ -59,7 +95,33 @@ function App() {
       }));
 
     return { arcs, nodes: topCities };
-  }, []);
+  }, [cities]);
+
+  // Flight data for airport connections
+  const flightData = useMemo(() => {
+    if (airports.length === 0 || flights.length === 0) return { arcs: [], nodes: [] };
+
+    // Convert airports to nodes format
+    const nodes = airports.map(airport => ({
+      id: airport.id,
+      name: airport.name,
+      city: airport.city,
+      lat: airport.lat,
+      lng: airport.lng,
+      population: airport.passengers,
+      type: airport.type
+    }));
+
+    // Convert flights to arcs format
+    const arcs = flights.map(flight => ({
+      source: flight.from,
+      target: flight.to,
+      value: flight.frequency,
+      label: `${flight.frequency} vuelos/día`
+    }));
+
+    return { arcs, nodes };
+  }, [airports, flights]);
 
   // Handlers
   const handleDatasetChange = (datasetId) => {
@@ -87,6 +149,37 @@ function App() {
     toggleTheme();
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <p className="text-gray-400 text-lg">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center max-w-md p-6">
+          <div className="text-red-500 text-5xl mb-4">!</div>
+          <h2 className="text-white text-xl font-semibold mb-2">Error al cargar datos</h2>
+          <p className="text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Render map based on type
   const renderMap = () => {
     const commonProps = { isDarkMode };
@@ -95,7 +188,7 @@ function App() {
       case 'choropleth':
         return (
           <ChoroplethMap
-            geojson={mexicoStatesGeoJSON}
+            geojson={geojson}
             data={activeDataset?.data || {}}
             colorScale={activeDataset?.colorScale || []}
             onRegionClick={handleRegionClick}
@@ -109,7 +202,7 @@ function App() {
       case 'markers':
         return (
           <MarkersMap
-            cities={MEXICO_CITIES}
+            cities={cities}
             onCityClick={handleCityClick}
             selectedCity={null}
             showLabels={true}
@@ -120,7 +213,7 @@ function App() {
       case 'heatmap':
         return (
           <HeatmapMap
-            data={MEXICO_CITIES.map(c => ({
+            data={cities.map(c => ({
               lng: c.lng,
               lat: c.lat,
               weight: c.population
@@ -135,7 +228,7 @@ function App() {
       case 'hexagon':
         return (
           <HexagonMap
-            data={MEXICO_CITIES.map(c => ({
+            data={cities.map(c => ({
               lng: c.lng,
               lat: c.lat,
               weight: c.population,
@@ -154,6 +247,16 @@ function App() {
           <ArcMap
             arcs={arcData.arcs}
             nodes={arcData.nodes}
+            showNodes={true}
+            {...commonProps}
+          />
+        );
+
+      case 'flights':
+        return (
+          <ArcMap
+            arcs={flightData.arcs}
+            nodes={flightData.nodes}
             showNodes={true}
             {...commonProps}
           />
@@ -185,7 +288,7 @@ function App() {
       <ControlPanel
         mapType={mapType}
         onMapTypeChange={handleMapTypeChange}
-        datasets={MEXICO_DATASETS}
+        datasets={datasets}
         activeDataset={activeDatasetId}
         onDatasetChange={handleDatasetChange}
         isDarkMode={isDarkMode}
@@ -209,6 +312,7 @@ function App() {
             {mapType === 'heatmap' && 'Densidad poblacional de ciudades'}
             {mapType === 'markers' && 'Click en ciudades para ver detalles'}
             {mapType === 'choropleth' && 'Click en estados para ver estadísticas'}
+            {mapType === 'flights' && 'Rutas aéreas entre aeropuertos de México'}
           </div>
         </div>
       )}

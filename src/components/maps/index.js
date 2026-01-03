@@ -44,5 +44,11 @@ export const MAP_TYPES = {
     name: 'Arcos',
     description: 'Conexiones entre ciudades',
     icon: '🌐'
+  },
+  flights: {
+    id: 'flights',
+    name: 'Vuelos',
+    description: 'Rutas aéreas entre aeropuertos',
+    icon: '✈️'
   }
 };
