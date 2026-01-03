@@ -127,7 +127,7 @@ const HexagonMap = ({
 
   // Render legend
   const renderLegend = () => (
-    <div className="absolute bottom-8 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-40 border border-gray-200 dark:border-gray-700">
+    <div className="absolute bottom-8 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-40 border border-gray-200 dark:border-gray-700">
       <div className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
         Concentración
       </div>
@@ -154,7 +154,7 @@ const HexagonMap = ({
 
   // Render controls
   const renderControls = () => (
-    <div className="absolute top-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-40 border border-gray-200 dark:border-gray-700">
+    <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 z-40 border border-gray-200 dark:border-gray-700">
       <div className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
         Vista 3D
       </div>

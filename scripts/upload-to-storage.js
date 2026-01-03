@@ -34,6 +34,11 @@ const FILES_TO_UPLOAD = [
     local: 'storage-data/mexico-states.geo.json',
     remote: 'data/mexico-states.geo.json',
     contentType: 'application/geo+json'
+  },
+  {
+    local: 'storage-data/mexico-airports.json',
+    remote: 'data/mexico-airports.json',
+    contentType: 'application/json'
   }
 ];
 

@@ -16,7 +16,9 @@ const cache = {
   datasets: null,
   cities: null,
   geojson: null,
-  stateNames: null
+  stateNames: null,
+  airports: null,
+  flights: null
 };
 
 /**
@@ -88,20 +90,46 @@ export async function loadGeoJSON() {
 }
 
 /**
+ * Loads airports and flights data from storage
+ * @returns {Promise<Object>} Object containing airports and flights arrays
+ */
+export async function loadAirports() {
+  if (cache.airports && cache.flights) {
+    return { airports: cache.airports, flights: cache.flights };
+  }
+
+  const data = await fetchFromStorage('data/mexico-airports.json');
+  cache.airports = data.airports;
+  cache.flights = data.flights;
+
+  return {
+    airports: data.airports,
+    flights: data.flights,
+    airportTypeColors: data.airportTypeColors,
+    airportTypeLabels: data.airportTypeLabels
+  };
+}
+
+/**
  * Loads all data in parallel
- * @returns {Promise<Object>} Object containing datasets, cities, geojson, and stateNames
+ * @returns {Promise<Object>} Object containing datasets, cities, geojson, airports, flights, and stateNames
  */
 export async function loadAllData() {
-  const [datasets, cities, geojson] = await Promise.all([
+  const [datasets, cities, geojson, airportData] = await Promise.all([
     loadDatasets(),
     loadCities(),
-    loadGeoJSON()
+    loadGeoJSON(),
+    loadAirports()
   ]);
 
   return {
     datasets,
     cities,
     geojson,
+    airports: airportData.airports,
+    flights: airportData.flights,
+    airportTypeColors: airportData.airportTypeColors,
+    airportTypeLabels: airportData.airportTypeLabels,
     stateNames: cache.stateNames
   };
 }
@@ -189,4 +217,6 @@ export function clearCache() {
   cache.cities = null;
   cache.geojson = null;
   cache.stateNames = null;
+  cache.airports = null;
+  cache.flights = null;
 }
