@@ -1,5 +1,6 @@
 import { Card, Badge } from 'flowbite-react';
 import { formatNumber, getDataRange, generateLegend } from '../utils/colorScale.js';
+import { STATE_NAMES } from '../data/mexico-datasets.js';
 
 /**
  * DataPanel Component
@@ -8,15 +9,15 @@ import { formatNumber, getDataRange, generateLegend } from '../utils/colorScale.
  * Uses Flowbite Card components for a modern BI dashboard look.
  *
  * @component
- * @param {Object} props - Component props
- * @param {Object} props.selectedRegion - Selected region data
- * @param {Object} props.dataset - Current dataset
- * @param {Object} props.geojson - GeoJSON to find region name
- * @param {string} props.idProperty - Property name for region ID
  */
 const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
-  // Find region details from GeoJSON
+  // Find region details from GeoJSON or STATE_NAMES
   const getRegionName = (regionId) => {
+    // First try STATE_NAMES lookup
+    if (STATE_NAMES && STATE_NAMES[regionId]) {
+      return STATE_NAMES[regionId];
+    }
+    // Fallback to GeoJSON
     if (!geojson || !geojson.features) return regionId;
     const feature = geojson.features.find(
       f => f.properties[idProperty] === regionId
@@ -42,16 +43,16 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
     return (
       <div className="h-full p-6 bg-gray-50 flex items-center justify-center dark:bg-gray-900">
         <div className="text-center max-w-md">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 dark:bg-blue-900">
-            <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-100 to-blue-100 rounded-full flex items-center justify-center mb-4 dark:from-emerald-900 dark:to-blue-900">
+            <svg className="w-8 h-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2 dark:text-white">
-            Select a Region
+            Selecciona una Región
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Click on any region in the map to view detailed statistics and insights.
+            Haz clic en cualquier estado en el mapa para ver estadísticas detalladas.
           </p>
         </div>
       </div>
@@ -71,12 +72,12 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
               <h2 className="text-2xl font-bold text-gray-900 mb-2 dark:text-white">
                 {regionName}
               </h2>
-              <Badge color="blue" size="sm">
+              <Badge color="info" size="sm">
                 {selectedRegion.id}
               </Badge>
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full dark:bg-blue-900">
-              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-emerald-100 to-blue-100 rounded-full dark:from-emerald-900 dark:to-blue-900">
+              <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
             </div>
@@ -87,13 +88,13 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {dataset?.name || 'Value'}
+              {dataset?.name || 'Valor'}
             </p>
             <p className="text-4xl font-bold text-gray-900 dark:text-white">
               {value != null ? formatNumber(value, dataset?.unit || 'number') : 'N/A'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {dataset?.description || 'Current dataset value'}
+              {dataset?.description || 'Valor del dataset actual'}
             </p>
           </div>
         </Card>
@@ -102,29 +103,29 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
         {stats && (
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white">
-              Dataset Statistics
+              Estadísticas del Dataset
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Minimum</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Mínimo</span>
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">
                   {formatNumber(stats.min, dataset?.unit || 'number')}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Average</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Promedio</span>
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">
                   {formatNumber(stats.average, dataset?.unit || 'number')}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Maximum</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Máximo</span>
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">
                   {formatNumber(stats.max, dataset?.unit || 'number')}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Regions</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Estados</span>
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">
                   {stats.count}
                 </span>
@@ -137,7 +138,7 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
         {dataset && stats && (
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white">
-              Color Legend
+              Leyenda de Colores
             </h3>
             <div className="space-y-2">
               {generateLegend(stats.min, stats.max, 5, dataset.colorScale).map((interval, idx) => (
@@ -161,12 +162,12 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
         {value != null && stats && (
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 dark:text-white">
-              Regional Comparison
+              Comparación Regional
             </h3>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600 dark:text-gray-400">vs. Average</span>
+                  <span className="text-gray-600 dark:text-gray-400">vs. Promedio Nacional</span>
                   <span className={`font-semibold ${
                     value > stats.average ? 'text-green-600' : 'text-red-600'
                   }`}>
@@ -187,11 +188,11 @@ const DataPanel = ({ selectedRegion, dataset, geojson, idProperty = 'id' }) => {
               </div>
 
               <div>
-                <p className="text-xs text-gray-500 mb-2 dark:text-gray-400">Percentile Rank</p>
+                <p className="text-xs text-gray-500 mb-2 dark:text-gray-400">Posición Percentil</p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-600 h-3 rounded-full relative">
+                  <div className="flex-1 bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-600 h-3 rounded-full relative">
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-1 h-5 bg-gray-900 rounded"
+                      className="absolute top-1/2 -translate-y-1/2 w-1 h-5 bg-gray-900 rounded dark:bg-white"
                       style={{
                         left: `${((value - stats.min) / (stats.max - stats.min)) * 100}%`
                       }}
