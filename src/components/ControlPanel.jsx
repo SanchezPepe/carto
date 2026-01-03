@@ -85,38 +85,51 @@ const ControlPanel = ({
 
         {/* Map Type Selector */}
         <div className="p-4">
-          {isExpanded && (
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              Visualización
-            </p>
-          )}
-
-          <div className={`grid gap-2 ${isExpanded ? 'grid-cols-5' : 'grid-cols-1'}`}>
-            {Object.values(MAP_TYPES).map((type) => {
-              const Icon = mapTypeIcons[type.id];
-              const isActive = type.id === mapType;
-
-              return (
-                <button
-                  key={type.id}
-                  onClick={() => onMapTypeChange(type.id)}
-                  className={`map-type-btn ${isActive ? 'active' : ''}`}
-                  title={type.name}
+          {isExpanded ? (
+            <>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                Visualización
+              </p>
+              <div className="relative">
+                <select
+                  value={mapType}
+                  onChange={(e) => onMapTypeChange(e.target.value)}
+                  className="w-full appearance-none bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 pr-10 text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
                 >
-                  <Icon className={`w-5 h-5 map-type-icon ${
-                    isActive ? '' : 'text-gray-500 dark:text-gray-400'
-                  }`} />
-                  {isExpanded && (
-                    <span className={`text-[10px] mt-1 ${
-                      isActive ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {type.name.split(' ')[0]}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                  {Object.values(MAP_TYPES).map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {Object.values(MAP_TYPES).map((type) => {
+                const Icon = mapTypeIcons[type.id];
+                const isActive = type.id === mapType;
+
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => onMapTypeChange(type.id)}
+                    className={`map-type-btn ${isActive ? 'active' : ''}`}
+                    title={type.name}
+                  >
+                    <Icon className={`w-5 h-5 map-type-icon ${
+                      isActive ? '' : 'text-gray-500 dark:text-gray-400'
+                    }`} />
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="divider mx-4" />
@@ -138,16 +151,18 @@ const ControlPanel = ({
                 <button
                   key={dataset.id}
                   onClick={() => onDatasetChange(dataset.id)}
-                  className={`w-full text-left rounded-xl p-3 transition-all duration-200 ${
+                  className={`w-full rounded-xl p-3 transition-all duration-200 ${
+                    isExpanded ? 'text-left' : 'flex justify-center'
+                  } ${
                     isActive
                       ? 'bg-gradient-to-r from-emerald-500/10 to-blue-500/10 ring-1 ring-emerald-500/30'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'
                   }`}
                   title={dataset.name}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{icon}</span>
-                    {isExpanded && (
+                  {isExpanded ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{icon}</span>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${
                           isActive ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-700 dark:text-gray-300'
@@ -158,8 +173,10 @@ const ControlPanel = ({
                           {dataset.description}
                         </p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <span className="text-xl">{icon}</span>
+                  )}
                 </button>
               );
             })}
