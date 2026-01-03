@@ -62,90 +62,54 @@ const ControlPanel = ({
   if (isMobile) {
     return (
       <>
-        {/* Floating Action Buttons */}
-        <div className="absolute left-4 top-4 z-30 flex flex-col gap-2">
-          {/* Logo */}
-          <div className="glass-panel rounded-2xl p-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-              <HiGlobeAmericas className="w-5 h-5 text-white" />
+        {/* Top Bar - Logo and Theme */}
+        <div className="absolute top-0 left-0 right-0 z-30 p-3 flex items-center justify-between">
+          <div className="glass-panel rounded-xl px-3 py-2 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center">
+              <HiGlobeAmericas className="w-4 h-4 text-white" />
             </div>
+            <span className="text-sm font-bold gradient-text">TerraVista</span>
           </div>
-        </div>
 
-        {/* Theme Toggle */}
-        <div className="absolute right-4 top-4 z-30">
           <button
             onClick={onToggleTheme}
-            className="glass-panel rounded-xl p-3"
+            className="glass-panel rounded-xl p-2.5"
           >
-            {isDarkMode ? <HiOutlineSun className="w-5 h-5 text-gray-600 dark:text-gray-300" /> : <HiOutlineMoon className="w-5 h-5 text-gray-600" />}
+            {isDarkMode ? <HiOutlineSun className="w-5 h-5 text-gray-300" /> : <HiOutlineMoon className="w-5 h-5 text-gray-600" />}
           </button>
         </div>
 
-        {/* Bottom Sheet */}
-        <div
-          className={`absolute left-0 right-0 bottom-0 z-30 transition-transform duration-300 ease-out ${
-            isExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)]'
-          }`}
-        >
-          <div className="glass-panel rounded-t-3xl overflow-hidden">
-            {/* Handle */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full py-3 flex justify-center"
-            >
-              <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
-            </button>
+        {/* Bottom Navigation Bar */}
+        <div className="absolute bottom-0 left-0 right-0 z-30 p-3 safe-area-bottom">
+          <div className="glass-panel rounded-2xl p-2">
+            {/* Map Type Icons */}
+            <div className="flex items-center justify-around">
+              {Object.values(MAP_TYPES).map((type) => {
+                const Icon = mapTypeIcons[type.id];
+                const isActive = type.id === mapType;
 
-            {/* Collapsed View - Map Types */}
-            <div className="px-4 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Visualización
-                </p>
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-gray-400"
-                >
-                  {isExpanded ? <HiChevronDown className="w-5 h-5" /> : <HiChevronUp className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Map Type Buttons */}
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-                {Object.values(MAP_TYPES).map((type) => {
-                  const Icon = mapTypeIcons[type.id];
-                  const isActive = type.id === mapType;
-
-                  return (
-                    <button
-                      key={type.id}
-                      onClick={() => onMapTypeChange(type.id)}
-                      className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 ${
-                        isActive
-                          ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg shadow-emerald-500/25'
-                          : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{type.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => onMapTypeChange(type.id)}
+                    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-[10px] font-medium">{type.name.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Expanded View - Datasets */}
-            {isExpanded && (
-              <div className="px-4 pb-6 animate-fade-in">
-                <div className="divider mb-4" />
-
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                  Datos
-                </p>
-
-                {/* Dataset Chips - Horizontal Scroll */}
-                <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+            {/* Dataset Selector - Only for choropleth */}
+            {mapType === 'choropleth' && datasets.length > 0 && (
+              <>
+                <div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
+                <div className="flex gap-2 overflow-x-auto hide-scrollbar py-1 px-1">
                   {datasets.map((dataset) => {
                     const isActive = dataset.id === activeDataset;
                     const icon = datasetIcons[dataset.id] || '📊';
@@ -154,28 +118,19 @@ const ControlPanel = ({
                       <button
                         key={dataset.id}
                         onClick={() => onDatasetChange(dataset.id)}
-                        className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+                        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           isActive
-                            ? 'bg-gradient-to-r from-emerald-500/20 to-blue-500/20 ring-2 ring-emerald-500/50 text-emerald-700 dark:text-emerald-300'
-                            : 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
                         }`}
                       >
                         <span>{icon}</span>
-                        <span className="text-sm font-medium">{dataset.name}</span>
+                        <span>{dataset.name}</span>
                       </button>
                     );
                   })}
                 </div>
-
-                {/* Current Dataset Info */}
-                {currentDataset && (
-                  <div className="mt-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {currentDataset.description}
-                    </p>
-                  </div>
-                )}
-              </div>
+              </>
             )}
           </div>
         </div>
