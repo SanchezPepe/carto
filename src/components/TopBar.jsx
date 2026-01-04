@@ -28,7 +28,7 @@ const TopBar = ({
             <p className={`font-semibold text-gray-900 dark:text-white ${
               isMobile ? 'text-xs' : 'text-xs'
             }`}>
-              {dataset?.name || 'TerraVista'}
+              {dataset?.name || 'Carto'}
             </p>
           </div>
         </div>

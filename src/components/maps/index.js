@@ -19,36 +19,42 @@ export const MAP_TYPES = {
     id: 'choropleth',
     name: 'Coroplético',
     description: 'Regiones coloreadas por valor',
-    icon: '🗺️'
+    icon: '🗺️',
+    usesDataset: true // Can use any dataset
   },
   markers: {
     id: 'markers',
     name: 'Marcadores',
     description: 'Puntos de ciudades',
-    icon: '📍'
+    icon: '📍',
+    usesDataset: false // Uses city data
   },
   heatmap: {
     id: 'heatmap',
     name: 'Mapa de Calor',
     description: 'Densidad de datos',
-    icon: '🔥'
+    icon: '🔥',
+    usesDataset: false // Uses city population
   },
   hexagon: {
     id: 'hexagon',
     name: 'Hexágonos 3D',
     description: 'Agregación hexagonal',
-    icon: '⬡'
+    icon: '⬡',
+    usesDataset: false // Uses city data
   },
   arc: {
     id: 'arc',
     name: 'Arcos',
     description: 'Conexiones entre ciudades',
-    icon: '🌐'
+    icon: '🌐',
+    usesDataset: false // Uses connection data
   },
   flights: {
     id: 'flights',
     name: 'Vuelos',
     description: 'Rutas aéreas entre aeropuertos',
-    icon: '✈️'
+    icon: '✈️',
+    usesDataset: false // Uses flight data
   }
 };

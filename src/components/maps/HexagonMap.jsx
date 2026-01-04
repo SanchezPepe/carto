@@ -30,6 +30,14 @@ const MAP_STYLES = {
  * @param {number} props.coverage - Hexagon coverage (0-1)
  * @param {boolean} props.isDarkMode - Dark mode flag
  */
+const DEFAULT_VIEW_STATE = {
+  longitude: -102.5528,
+  latitude: 23.6345,
+  zoom: 4.5,
+  pitch: 45,
+  bearing: -15
+};
+
 const HexagonMap = ({
   data = [],
   radius = 25000,
@@ -37,17 +45,25 @@ const HexagonMap = ({
   extruded = true,
   colorRange = null,
   coverage = 0.8,
-  isDarkMode = false
+  isDarkMode = false,
+  viewState: externalViewState,
+  onViewStateChange
 }) => {
-  const [viewState, setViewState] = useState({
-    longitude: -102.5528,
-    latitude: 23.6345,
-    zoom: 4.5,
-    pitch: 45,
-    bearing: -15
-  });
-
+  const [internalViewState, setInternalViewState] = useState(DEFAULT_VIEW_STATE);
   const [hoverInfo, setHoverInfo] = useState(null);
+
+  // Use external viewState if provided (apply 3D defaults for hexagon), otherwise use internal
+  const viewState = externalViewState
+    ? { ...externalViewState, pitch: externalViewState.pitch || 45, bearing: externalViewState.bearing || -15 }
+    : internalViewState;
+
+  const handleViewStateChange = ({ viewState: newViewState }) => {
+    if (onViewStateChange) {
+      onViewStateChange(newViewState);
+    } else {
+      setInternalViewState(newViewState);
+    }
+  };
 
   // Default color range (blue to red)
   const defaultColorRange = [
@@ -171,7 +187,7 @@ const HexagonMap = ({
     <div className="relative w-full h-full">
       <DeckGL
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState)}
+        onViewStateChange={handleViewStateChange}
         controller={true}
         layers={layers}
         getCursor={({ isDragging }) => isDragging ? 'grabbing' : 'grab'}

@@ -28,22 +28,38 @@ const MAP_STYLES = {
  * @param {boolean} props.showNodes - Whether to show node markers
  * @param {boolean} props.isDarkMode - Dark mode flag
  */
+const DEFAULT_VIEW_STATE = {
+  longitude: -102.5528,
+  latitude: 23.6345,
+  zoom: 4.5,
+  pitch: 30,
+  bearing: 0
+};
+
 const ArcMap = ({
   arcs = [],
   nodes = [],
   onArcClick,
   showNodes = true,
-  isDarkMode = false
+  isDarkMode = false,
+  viewState: externalViewState,
+  onViewStateChange
 }) => {
-  const [viewState, setViewState] = useState({
-    longitude: -102.5528,
-    latitude: 23.6345,
-    zoom: 4.5,
-    pitch: 30,
-    bearing: 0
-  });
-
+  const [internalViewState, setInternalViewState] = useState(DEFAULT_VIEW_STATE);
   const [hoverInfo, setHoverInfo] = useState(null);
+
+  // Use external viewState if provided (apply 3D defaults for arc), otherwise use internal
+  const viewState = externalViewState
+    ? { ...externalViewState, pitch: externalViewState.pitch || 30 }
+    : internalViewState;
+
+  const handleViewStateChange = ({ viewState: newViewState }) => {
+    if (onViewStateChange) {
+      onViewStateChange(newViewState);
+    } else {
+      setInternalViewState(newViewState);
+    }
+  };
 
   // Get node by ID
   const getNodeById = useCallback((id) => {
@@ -233,7 +249,7 @@ const ArcMap = ({
     <div className="relative w-full h-full">
       <DeckGL
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState)}
+        onViewStateChange={handleViewStateChange}
         controller={true}
         layers={layers}
         getCursor={({ isDragging, isHovering }) =>

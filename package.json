@@ -1,8 +1,8 @@
 {
-  "name": "terravista",
+  "name": "carto",
   "private": true,
   "version": "1.0.0",
-  "description": "TerraVista - Visualización Geoespacial de México",
+  "description": "Carto - Visualización Geoespacial de México",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -32,6 +32,14 @@ const MAP_STYLES = {
  * @param {string} props.idProperty - GeoJSON ID property
  * @param {boolean} props.isDarkMode - Dark mode flag
  */
+const DEFAULT_VIEW_STATE = {
+  longitude: -102.5528,
+  latitude: 23.6345,
+  zoom: 4.5,
+  pitch: 0,
+  bearing: 0
+};
+
 const ChoroplethMap = ({
   geojson,
   data,
@@ -40,17 +48,23 @@ const ChoroplethMap = ({
   selectedRegion = null,
   dataUnit = 'number',
   idProperty = 'id',
-  isDarkMode = false
+  isDarkMode = false,
+  viewState: externalViewState,
+  onViewStateChange
 }) => {
-  const [viewState, setViewState] = useState({
-    longitude: -102.5528,
-    latitude: 23.6345,
-    zoom: 4.5,
-    pitch: 0,
-    bearing: 0
-  });
-
+  const [internalViewState, setInternalViewState] = useState(DEFAULT_VIEW_STATE);
   const [hoverInfo, setHoverInfo] = useState(null);
+
+  // Use external viewState if provided, otherwise use internal
+  const viewState = externalViewState || internalViewState;
+
+  const handleViewStateChange = ({ viewState: newViewState }) => {
+    if (onViewStateChange) {
+      onViewStateChange(newViewState);
+    } else {
+      setInternalViewState(newViewState);
+    }
+  };
 
   // Calculate data range
   const { min, max } = useMemo(() => getDataRange(data), [data]);
@@ -82,7 +96,7 @@ const ChoroplethMap = ({
     if (isSelected) {
       return [30, 64, 175, 255]; // Blue border for selected
     }
-    return isDarkMode ? [100, 100, 100, 200] : [255, 255, 255, 200];
+    return isDarkMode ? [100, 100, 100, 200] : [80, 80, 80, 150]; // Dark border for light mode
   }, [selectedRegion, idProperty, isDarkMode]);
 
   // Create GeoJSON layer
@@ -157,7 +171,7 @@ const ChoroplethMap = ({
     <div className="relative w-full h-full">
       <DeckGL
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState)}
+        onViewStateChange={handleViewStateChange}
         controller={true}
         layers={layers}
         getCursor={({ isDragging, isHovering }) =>

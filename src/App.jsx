@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import ControlPanel from './components/ControlPanel.jsx';
 import InfoPanel from './components/InfoPanel.jsx';
 import TopBar from './components/TopBar.jsx';
@@ -12,9 +12,11 @@ import {
 import { loadAllData, getDatasetById, getTopCities } from './utils/dataLoader.js';
 import { toggleTheme } from './utils/darkMode';
 import { useIsMobile } from './utils/useMediaQuery';
+import { getViewStateForState, getDefaultViewState, DEFAULT_VIEW_STATE } from './utils/stateNavigation';
+import { MAP_LEVELS, getLevelConfig, STATES_WITH_LOCAL_MAPS } from './data/map-levels';
 
 /**
- * TerraVista - Modern Geospatial Visualization App
+ * Carto - Modern Geospatial Visualization App
  *
  * Features a full-screen map with floating glassmorphic control panels.
  * Data is loaded from Firebase Storage at runtime.
@@ -34,7 +36,14 @@ function App() {
   const [selectedRegionId, setSelectedRegionId] = useState(null);
   const [mapType, setMapType] = useState('choropleth');
   const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains('dark'));
+  const [viewState, setViewState] = useState(DEFAULT_VIEW_STATE);
+  const [mapLevel, setMapLevel] = useState('national'); // 'national' or state ID like 'CMX'
+  const [localGeojson, setLocalGeojson] = useState(null);
+  const [isLoadingLocal, setIsLoadingLocal] = useState(false);
   const isMobile = useIsMobile();
+
+  // Get current level configuration
+  const levelConfig = getLevelConfig(mapLevel);
 
   // Load data from Firebase Storage
   useEffect(() => {
@@ -71,8 +80,47 @@ function App() {
     return () => observer.disconnect();
   }, []);
 
-  // Derived state
-  const activeDataset = getDatasetById(datasets, activeDatasetId);
+  // Load local GeoJSON when map level changes
+  useEffect(() => {
+    if (mapLevel === 'national') {
+      setLocalGeojson(null);
+      return;
+    }
+
+    const config = getLevelConfig(mapLevel);
+    if (!config.geojsonPath) return;
+
+    setIsLoadingLocal(true);
+    fetch(config.geojsonPath)
+      .then(res => res.json())
+      .then(data => {
+        setLocalGeojson(data);
+        // Set initial dataset for local level
+        if (config.datasets && config.datasets.length > 0) {
+          setActiveDatasetId(config.datasets[0].id);
+        }
+        // Set view to local area
+        setViewState({
+          longitude: config.center.lng,
+          latitude: config.center.lat,
+          zoom: config.zoom,
+          pitch: 0,
+          bearing: 0,
+          transitionDuration: 1500
+        });
+        setSelectedRegionId(null);
+      })
+      .catch(err => console.error('Failed to load local GeoJSON:', err))
+      .finally(() => setIsLoadingLocal(false));
+  }, [mapLevel]);
+
+  // Derived state - use level-specific datasets
+  const currentDatasets = mapLevel === 'national' ? datasets : (levelConfig.datasets || []);
+  const activeDataset = currentDatasets.find(d => d.id === activeDatasetId) || null;
+  const currentGeojson = mapLevel === 'national' ? geojson : localGeojson;
+  const currentIdProperty = levelConfig.idProperty || 'id';
+  const currentRegionNames = mapLevel === 'national' ? null : levelConfig.regionNames;
+
   const selectedRegionData = selectedRegionId && activeDataset
     ? { id: selectedRegionId, value: activeDataset.data[selectedRegionId] }
     : null;
@@ -149,6 +197,48 @@ function App() {
     toggleTheme();
   };
 
+  const handleNavigateToState = useCallback((stateId) => {
+    if (stateId && geojson) {
+      const newViewState = getViewStateForState(geojson, stateId);
+      setViewState(newViewState);
+      setSelectedRegionId(stateId);
+    } else {
+      // Navigate to national view
+      setViewState(getDefaultViewState());
+      setSelectedRegionId(null);
+    }
+  }, [geojson]);
+
+  const handleViewStateChange = useCallback((newViewState) => {
+    setViewState(newViewState);
+  }, []);
+
+  const handleMapLevelChange = useCallback((newLevel) => {
+    setMapLevel(newLevel);
+    setSelectedRegionId(null);
+
+    // If going back to national, reset to national datasets
+    if (newLevel === 'national') {
+      if (datasets.length > 0) {
+        setActiveDatasetId(datasets[0].id);
+      }
+      setViewState(getDefaultViewState());
+    }
+  }, [datasets]);
+
+  const handleResetView = useCallback(() => {
+    const config = getLevelConfig(mapLevel);
+    setViewState({
+      longitude: config.center.lng,
+      latitude: config.center.lat,
+      zoom: config.zoom,
+      pitch: 0,
+      bearing: 0,
+      transitionDuration: 1000
+    });
+    setSelectedRegionId(null);
+  }, [mapLevel]);
+
   // Loading state
   if (isLoading) {
     return (
@@ -182,19 +272,23 @@ function App() {
 
   // Render map based on type
   const renderMap = () => {
-    const commonProps = { isDarkMode };
+    const commonProps = {
+      isDarkMode,
+      viewState,
+      onViewStateChange: handleViewStateChange
+    };
 
     switch (mapType) {
       case 'choropleth':
         return (
           <ChoroplethMap
-            geojson={geojson}
+            geojson={currentGeojson}
             data={activeDataset?.data || {}}
             colorScale={activeDataset?.colorScale || []}
             onRegionClick={handleRegionClick}
             selectedRegion={selectedRegionId}
             dataUnit={activeDataset?.unit}
-            idProperty="id"
+            idProperty={currentIdProperty}
             {...commonProps}
           />
         );
@@ -288,11 +382,17 @@ function App() {
       <ControlPanel
         mapType={mapType}
         onMapTypeChange={handleMapTypeChange}
-        datasets={datasets}
+        datasets={currentDatasets}
         activeDataset={activeDatasetId}
         onDatasetChange={handleDatasetChange}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
+        onNavigateToState={handleNavigateToState}
+        mapLevel={mapLevel}
+        onMapLevelChange={handleMapLevelChange}
+        availableLevels={MAP_LEVELS}
+        isLoadingLocal={isLoadingLocal}
+        onResetView={handleResetView}
       />
 
       {/* Right Info Panel */}
@@ -311,7 +411,8 @@ function App() {
             {mapType === 'arc' && 'Conexiones desde Ciudad de México'}
             {mapType === 'heatmap' && 'Densidad poblacional de ciudades'}
             {mapType === 'markers' && 'Click en ciudades para ver detalles'}
-            {mapType === 'choropleth' && 'Click en estados para ver estadísticas'}
+            {mapType === 'choropleth' && mapLevel === 'national' && 'Click en estados para ver estadísticas'}
+            {mapType === 'choropleth' && mapLevel !== 'national' && `Viendo ${levelConfig.name} • Click en regiones para detalles`}
             {mapType === 'flights' && 'Rutas aéreas entre aeropuertos de México'}
           </div>
         </div>

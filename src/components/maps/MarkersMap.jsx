@@ -35,22 +35,36 @@ const ICON_MAPPING = {
  * @param {boolean} props.showLabels - Whether to show city labels
  * @param {boolean} props.isDarkMode - Dark mode flag
  */
+const DEFAULT_VIEW_STATE = {
+  longitude: -102.5528,
+  latitude: 23.6345,
+  zoom: 4.5,
+  pitch: 0,
+  bearing: 0
+};
+
 const MarkersMap = ({
   cities = [],
   onCityClick,
   selectedCity = null,
   showLabels = true,
-  isDarkMode = false
+  isDarkMode = false,
+  viewState: externalViewState,
+  onViewStateChange
 }) => {
-  const [viewState, setViewState] = useState({
-    longitude: -102.5528,
-    latitude: 23.6345,
-    zoom: 4.5,
-    pitch: 0,
-    bearing: 0
-  });
-
+  const [internalViewState, setInternalViewState] = useState(DEFAULT_VIEW_STATE);
   const [hoverInfo, setHoverInfo] = useState(null);
+
+  // Use external viewState if provided, otherwise use internal
+  const viewState = externalViewState || internalViewState;
+
+  const handleViewStateChange = ({ viewState: newViewState }) => {
+    if (onViewStateChange) {
+      onViewStateChange(newViewState);
+    } else {
+      setInternalViewState(newViewState);
+    }
+  };
 
   // Convert hex color to RGB
   const hexToRgb = (hex) => {
@@ -200,7 +214,7 @@ const MarkersMap = ({
     <div className="relative w-full h-full">
       <DeckGL
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState)}
+        onViewStateChange={handleViewStateChange}
         controller={true}
         layers={layers}
         getCursor={({ isDragging, isHovering }) =>
